@@ -44,7 +44,17 @@ export function TradingDashboard() {
     isAnalyzing,
     generateSignal,
     exportXML,
-  } = usePredictionEngine(selectedSymbol, ticks[selectedSymbol] || [], riskSettings);
+  } = usePredictionEngine(selectedSymbol, ticks[selectedSymbol] || [], riskSettings, isActive);
+
+  console.log('📊 Dashboard State:', {
+    selectedSymbol,
+    tickCount: (ticks[selectedSymbol] || []).length,
+    digitPredictions: digitPredictions.length,
+    hasBandPrediction: !!bandPrediction,
+    signalCount: signals.length,
+    hasFeatures: !!features,
+    isAnalyzing,
+  });
 
   useEffect(() => {
     if (selectedSymbol) {
@@ -154,7 +164,7 @@ export function TradingDashboard() {
                 symbol={selectedSymbol}
                 ticks={ticks[selectedSymbol] || []}
                 isConnected={isConnected}
-                isAnalyzing={isAnalyzing && isActive}
+                isAnalyzing={isAnalyzing} // Always show analysis status
                 features={features}
               />
             </Card>
@@ -166,7 +176,7 @@ export function TradingDashboard() {
               <PredictionPanel
                 digitPredictions={digitPredictions}
                 bandPrediction={bandPrediction}
-                isActive={isActive && isAnalyzing}
+                isActive={isAnalyzing} // Show predictions even when not actively trading
                 threshold={riskSettings.probabilityThreshold}
                 onGenerateSignal={generateSignal}
               />

@@ -6,7 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 export function usePredictionEngine(
   symbol: VolatilityIndex,
   ticks: DerivTick[],
-  riskSettings: RiskSettings
+  riskSettings: RiskSettings,
+  isActiveTrading: boolean = true // Add parameter to control signal generation
 ) {
   const [digitPredictions, setDigitPredictions] = useState<DigitPrediction[]>([]);
   const [bandPrediction, setBandPrediction] = useState<BandPrediction>();
@@ -133,11 +134,20 @@ export function usePredictionEngine(
 
   // Multi-run analysis logic
   const performAnalysis = useCallback(() => {
-    if (ticks.length < 10) return;
+    console.log('🔍 Starting analysis run for', symbol, 'with', ticks.length, 'ticks');
+    
+    if (ticks.length < 10) {
+      console.log('❌ Not enough ticks for analysis:', ticks.length);
+      return;
+    }
 
     const currentFeatures = extractFeatures(ticks);
-    if (!currentFeatures) return;
+    if (!currentFeatures) {
+      console.log('❌ Failed to extract features from ticks');
+      return;
+    }
 
+    console.log('✅ Features extracted:', currentFeatures);
     setFeatures(currentFeatures);
     setIsAnalyzing(true);
 
@@ -145,11 +155,15 @@ export function usePredictionEngine(
     const digitPreds = predictDigit(currentFeatures);
     const bandPred = predictBand(currentFeatures);
 
+    console.log('🎲 Generated digit predictions:', digitPreds);
+    console.log('📊 Generated band predictions:', bandPred);
+
     setDigitPredictions(digitPreds);
     setBandPrediction(bandPred);
 
     // Multi-run logic: evaluate every 2.5s up to 4 runs
     runCountRef.current += 1;
+    console.log('📈 Analysis run', runCountRef.current, 'of 4');
     
     const topDigit = digitPreds.sort((a, b) => b.probability - a.probability)[0];
     const topBand = bandPred.over2 > bandPred.under7 ? 'over2' : 'under7';
@@ -159,8 +173,12 @@ export function usePredictionEngine(
       band: topDigit.probability >= riskSettings.probabilityThreshold ? 'none' : topBand,
     });
 
+    console.log('🏆 Top digit prediction:', topDigit.digit, 'with probability:', topDigit.probability);
+    console.log('📊 Top band prediction:', topBand, 'threshold:', riskSettings.probabilityThreshold);
+
     // After 4 runs or timeout, evaluate consensus
     if (runCountRef.current >= 4) {
+      console.log('🎯 Evaluating consensus after 4 runs');
       const digitVotes: Record<number, number> = {};
       const bandVotes: Record<string, number> = {};
 
@@ -181,18 +199,29 @@ export function usePredictionEngine(
       const bandConsensus = consensusBand && consensusBand[0] !== 'none' ? consensusBand[0] as 'over2' | 'under7' : null;
       const bandVoteCount = consensusBand ? consensusBand[1] : 0;
 
-      if (digitVoteCount >= riskSettings.requiredRuns && topDigit.probability >= riskSettings.probabilityThreshold) {
-        // Generate exact digit signal
-        generateSignal('exact_digit', digitConsensus, undefined, topDigit.confidence, runCountRef.current);
-      } else if (bandConsensus && bandVoteCount >= riskSettings.requiredRuns && bandPred.confidence >= riskSettings.probabilityThreshold) {
-        // Generate over/under signal
-        generateSignal('over_under', undefined, bandConsensus, bandPred.confidence, runCountRef.current);
+      console.log('🗳️ Digit consensus:', digitConsensus, 'votes:', digitVoteCount, 'required:', riskSettings.requiredRuns);
+      console.log('🗳️ Band consensus:', bandConsensus, 'votes:', bandVoteCount, 'required:', riskSettings.requiredRuns);
+
+      // Only generate signals if actively trading
+      if (isActiveTrading) {
+        if (digitVoteCount >= riskSettings.requiredRuns && topDigit.probability >= riskSettings.probabilityThreshold) {
+          console.log('🎯 Generating exact digit signal!');
+          generateSignal('exact_digit', digitConsensus, undefined, topDigit.confidence, runCountRef.current);
+        } else if (bandConsensus && bandVoteCount >= riskSettings.requiredRuns && bandPred.confidence >= riskSettings.probabilityThreshold) {
+          console.log('🎯 Generating over/under signal!');
+          generateSignal('over_under', undefined, bandConsensus, bandPred.confidence, runCountRef.current);
+        } else {
+          console.log('⏳ No signal generated - consensus or confidence requirements not met');
+        }
+      } else {
+        console.log('📊 Analysis complete but not generating signals - trading not active');
       }
 
       // Reset for next cycle
       runCountRef.current = 0;
       runResultsRef.current = [];
       setIsAnalyzing(false);
+      console.log('🔄 Analysis cycle complete, resetting for next cycle');
     }
   }, [ticks, extractFeatures, predictDigit, predictBand, riskSettings]);
 
@@ -204,7 +233,12 @@ export function usePredictionEngine(
     confidence?: number,
     runs?: number
   ) => {
-    if (!features) return;
+    console.log('🚀 Generating signal:', { type, predictedDigit, predictedBand, confidence, runs });
+    
+    if (!features) {
+      console.log('❌ Cannot generate signal - no features available');
+      return;
+    }
 
     const signal: TradingSignal = {
       id: uuidv4(),
@@ -219,6 +253,7 @@ export function usePredictionEngine(
       features,
     };
 
+    console.log('📝 Created signal:', signal);
     setSignals(prev => [signal, ...prev].slice(0, 50)); // Keep last 50 signals
 
     toast({
@@ -226,6 +261,7 @@ export function usePredictionEngine(
       description: `${type === 'exact_digit' ? `Digit ${predictedDigit}` : predictedBand} - ${(confidence || 0.5 * 100).toFixed(1)}% confidence`,
     });
 
+    console.log('✅ Signal added to history, total signals:', signals.length + 1);
     return signal.id;
   }, [symbol, features, toast]);
 
@@ -267,8 +303,13 @@ export function usePredictionEngine(
 
   // Start analysis when ticks are available
   useEffect(() => {
+    console.log('🎯 Prediction Engine - Ticks received:', ticks.length, 'for symbol:', symbol);
+    
     if (ticks.length >= 10) {
+      console.log('✅ Starting prediction analysis - sufficient ticks available');
       analysisIntervalRef.current = setInterval(performAnalysis, 2500); // Every 2.5 seconds
+    } else {
+      console.log('⏳ Waiting for more ticks - need 10, have:', ticks.length);
     }
 
     return () => {
