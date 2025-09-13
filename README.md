@@ -2,7 +2,6 @@
 
 A sophisticated, real-time volatility indices analysis platform for Deriv markets with AI-powered predictions and automated XML bot export capabilities.
 
-![Accelerator Zone Dashboard](https://lovable.dev/opengraph-image-p98pqg.png)
 
 ## 🚀 Features
 
