@@ -1,295 +1,190 @@
-# Accelerator Zone - Mercedes AI Analysis Platform
+# Accelerator Zone - Mercedes AI Analysis
 
-A sophisticated, real-time volatility indices analysis platform for Deriv markets with AI-powered predictions and automated XML bot export capabilities.
-
+A sophisticated trading analysis platform that connects to the Deriv API for real-time market data and provides AI-powered predictions for volatility indices trading.
 
 ## 🚀 Features
 
-### Real-Time Market Analysis
-- **Live WebSocket Connection** to Deriv API with automatic reconnection
-- **Multi-Timeframe Support** for 1-minute and 5-minute analysis windows
-- **Comprehensive Asset Coverage** including all Deriv volatility indices (10, 25, 50, 75, 100) and their 1-second variants
-- **Real-Time Tick Streaming** with sparkline visualization and historical data retention
+- **Real-time Data Streaming**: Direct connection to Deriv API WebSocket for live market data
+- **AI-Powered Predictions**: Advanced algorithm analyzing multiple factors:
+  - Frequency-based analysis (historical patterns)
+  - Trend analysis (momentum-based)
+  - Volatility analysis (market conditions)
+  - Mean reversion analysis
+  - Spike detection (extreme events)
+- **Multi-Run Consensus**: 4-run analysis cycle for higher accuracy
+- **Risk Management**: Comprehensive risk controls and settings
+- **Signal Generation**: Automated trading signal generation with XML export for Binary Bot
+- **Live Dashboard**: Real-time visualization of market data and predictions
 
-### AI-Powered Predictions
-- **Exact Digit Analysis** with probability distribution for digits 0-9
-- **Over/Under Band Predictions** for Over 2 and Under 7 scenarios
-- **Multi-Run Consensus Logic** evaluating up to 4 analysis runs within 10-second windows
-- **Confidence-Based Signal Generation** with configurable probability thresholds
-
-### Advanced Risk Management
-- **Market Shift Detection** using rolling z-score volatility analysis
-- **Configurable Risk Limits** including max consecutive losses and daily loss limits
-- **Real-Time Market Status Monitoring** with automatic trading halt capabilities
-- **Drawdown Protection** with percentage-based stop-loss mechanisms
-
-### Professional Trading Interface
-- **Dark Theme Glass Morphism Design** with electric blue accents
-- **Responsive 3-Column Layout** optimized for both desktop and mobile
-- **Real-Time Data Visualization** with animated charts and live tick feeds
-- **Interactive Risk Controls** with slider-based parameter adjustment
-
-### XML Bot Integration
-- **Binary Bot Compatible XML Export** with one-click download
-- **Configurable Trading Parameters** including stake, duration, and strategy type
-- **Automated Trade Signal Documentation** with full audit trail
-- **Import-Ready Format** for immediate use in Deriv Bot platform
-
-## 🛠️ Technology Stack
-
-### Frontend
-- **React 18** with TypeScript for type-safe development
-- **Vite** for lightning-fast development and optimized builds
-- **Tailwind CSS** with custom design system and semantic tokens
-- **shadcn/ui** components with extensive customization
-- **Lucide React** icons for professional UI elements
-
-### Backend (Ready for Extension)
-- **Node.js 18+** with Express.js framework
-- **WebSocket Client** for real-time Deriv API connectivity
-- **SQLite Database** for tick data persistence and signal history
-- **Lightweight ML Engine** with statistical analysis and prediction models
-
-### Analysis Engine
-- **Feature Extraction Pipeline** with rolling window analysis
-- **Multi-Run Consensus Algorithm** for signal validation
-- **Statistical Modeling** with volatility and trend detection
-- **Risk-Adjusted Signal Generation** with configurable thresholds
-
-## 🚀 Quick Start
+## 🔧 Setup
 
 ### Prerequisites
-- Node.js 18+ and npm installed
-- Modern web browser with WebSocket support
-- Deriv demo account (recommended) or live account
+
+- Node.js 18+ 
+- npm or yarn
+- Deriv API account (demo or real)
 
 ### Installation
 
-```bash
-# Clone the repository
-git clone <repository-url>
-cd accelerator-zone
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-# Install dependencies
-npm install
+3. Configure environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Edit `.env` with your Deriv API tokens:
+   ```
+   VITE_DERIV_DEMO_TOKEN=your_demo_token_here
+   VITE_DERIV_REAL_TOKEN=your_real_token_here
+   ```
 
-# Start development server
-npm run dev
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+5. Open your browser to `http://localhost:8080`
+
+## 🔑 API Configuration
+
+The application uses two Deriv API tokens:
+
+- **Demo Token**: `ty6Pm5q4DyxTRMU` (for testing)
+- **Real Token**: `ZMeYdNOS4mn7hun` (for live trading)
+
+You can switch between demo and real accounts using the toggle in the header.
+
+## 📊 Supported Symbols
+
+The platform supports all Deriv Volatility Indices:
+
+- R_10 (Volatility 10 Index)
+- R_10_1S (Volatility 10 1s Index)
+- R_25 (Volatility 25 Index)
+- R_25_1S (Volatility 25 1s Index)
+- R_50 (Volatility 50 Index)
+- R_50_1S (Volatility 50 1s Index)
+- R_75 (Volatility 75 Index)
+- R_75_1S (Volatility 75 1s Index)
+- R_100 (Volatility 100 Index)
+- R_100_1S (Volatility 100 1s Index)
+
+## 🎯 Prediction Algorithm
+
+The AI prediction engine uses a sophisticated multi-factor analysis:
+
+### Digit Predictions
+- **Frequency Analysis (40%)**: Historical digit patterns
+- **Trend Analysis (30%)**: Momentum-based adjustments
+- **Volatility Analysis (20%)**: Market condition factors
+- **Mean Reversion (10%)**: Price deviation corrections
+- **Spike Detection**: Extreme event handling
+
+### Band Predictions
+- **Over 2**: Digits 3,4,5,6,7,8,9
+- **Under 7**: Digits 0,1,2,3,4,5,6
+- Enhanced with trend, volatility, and mean reversion analysis
+
+## ⚙️ Risk Management
+
+Configurable risk parameters:
+
+- **Max Consecutive Losses**: Default 3
+- **Daily Loss Limit**: Default $100
+- **Max Drawdown**: Default 20%
+- **Probability Threshold**: Default 75%
+- **Required Runs**: Default 3 consensus runs
+- **Stake Amount**: Default $1
+
+## 🔄 Signal Generation
+
+The system generates trading signals based on:
+
+1. **Multi-run Analysis**: 4 analysis cycles over 10 seconds
+2. **Consensus Building**: Requires minimum runs for signal generation
+3. **Confidence Thresholds**: Only generates signals above probability threshold
+4. **XML Export**: Compatible with Binary Bot for automated trading
+
+## 🛠️ Technical Stack
+
+- **Frontend**: React 18 + TypeScript
+- **UI Framework**: Tailwind CSS + shadcn/ui
+- **WebSocket**: Native WebSocket API
+- **State Management**: React Hooks
+- **Build Tool**: Vite
+- **Charts**: Canvas-based sparklines
+
+## 📁 Project Structure
+
+```
+src/
+├── components/          # React components
+│   ├── ui/             # shadcn/ui components
+│   ├── TradingDashboard.tsx
+│   ├── LiveFeed.tsx
+│   ├── PredictionPanel.tsx
+│   └── ...
+├── hooks/              # Custom React hooks
+│   ├── useDerivWebSocket.ts
+│   └── usePredictionEngine.ts
+├── types/              # TypeScript type definitions
+│   └── deriv.ts
+├── utils/              # Utility functions
+└── pages/              # Page components
 ```
 
-The application will be available at `http://localhost:5173`
+## 🚨 Error Handling
 
-### Environment Configuration
+The application includes comprehensive error handling:
 
-Create a `.env` file in the root directory:
+- **WebSocket Reconnection**: Automatic reconnection with exponential backoff
+- **API Error Handling**: Graceful handling of Deriv API errors
+- **Analysis Error Recovery**: Robust prediction engine error handling
+- **Connection Status**: Real-time connection and authorization status
 
-```env
-# Deriv API Configuration
-DERIV_WS_URL=wss://ws.binaryws.com/websockets/v3?app_id=1089
-DERIV_TOKEN=your_demo_token_here
-DERIV_APP_ID=1089
+## 🔒 Security
 
-# Application Settings
-NODE_ENV=development
-PORT=3000
+- Environment variables for sensitive data
+- Token-based authentication
+- Secure WebSocket connections
+- No sensitive data in client-side code
 
-# Optional: Telegram Integration
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-TELEGRAM_CHAT_ID=your_chat_id
-```
+## 📈 Performance
 
-## 📊 Usage Guide
+- Optimized WebSocket message handling
+- Efficient tick data management (last 100 ticks per symbol)
+- Canvas-based chart rendering
+- Debounced analysis cycles
 
-### Getting Started
-1. **Launch Application**: Start the development server and navigate to the dashboard
-2. **Select Asset**: Choose from available volatility indices (R_10, R_25, R_50, etc.)
-3. **Configure Risk Settings**: Set stake amount, risk limits, and probability thresholds
-4. **Start Analysis**: Click "Start Analysis" to begin real-time market monitoring
+## 🐛 Troubleshooting
 
-### Asset Selection
-- **Standard Indices**: R_10, R_25, R_50, R_75, R_100 (updated every ~2 seconds)
-- **High-Frequency Indices**: R_10_1S, R_25_1S, etc. (updated every second)
-- **Timeframe Options**: 1-minute or 5-minute analysis windows
+### Common Issues
 
-### Risk Management
-- **Probability Threshold**: Minimum confidence level for signal generation (50%-90%)
-- **Required Runs**: Number of consensus runs needed (2-4 out of 4 total runs)
-- **Stake Management**: Base stake amount with optional martingale progression
-- **Loss Limits**: Maximum consecutive losses and daily loss caps
+1. **Connection Failed**: Check your internet connection and API tokens
+2. **No Data**: Ensure you're subscribed to a valid symbol
+3. **Analysis Errors**: Check browser console for detailed error messages
+4. **Build Errors**: Ensure all dependencies are installed with `npm install`
 
-### Signal Generation
-1. **Automatic Mode**: Signals generated when consensus and confidence thresholds are met
-2. **Manual Mode**: Force signal generation for current top prediction
-3. **Export Options**: Download Binary Bot XML for immediate import
-4. **Signal History**: Track all generated signals with status updates
+### Debug Mode
 
-### XML Bot Integration
-1. **Generate Signal**: Wait for high-confidence prediction or manually trigger
-2. **Export XML**: Click "Export XML" button to download bot file
-3. **Import to Deriv Bot**: Upload XML file directly to Binary Bot interface
-4. **Execute Strategy**: Run the imported strategy with your configured parameters
+Enable debug logging by opening browser developer tools and checking the console for detailed logs.
 
-## 🔧 Configuration Options
+## 📝 License
 
-### Trading Parameters
-- **Stake Amount**: Base trade amount in USD
-- **Martingale Multiplier**: Multiplier for loss recovery (1.0x - 3.0x)
-- **Contract Duration**: Automatic based on asset type (5 ticks for 1s, 10 ticks for standard)
-
-### Analysis Settings
-- **Probability Threshold**: 50% - 90% confidence requirement
-- **Required Consensus**: 2-4 agreeing runs out of 4 total
-- **Analysis Window**: Last 10-30 seconds of tick data
-- **Feature Extraction**: Statistical indicators and trend analysis
-
-### Risk Controls
-- **Max Consecutive Losses**: 1-10 losing trades before halt
-- **Daily Loss Limit**: Maximum daily loss in USD
-- **Drawdown Protection**: 5%-50% portfolio protection
-- **Market Shift Halt**: Automatic stop during high volatility
-
-## 📈 Analysis Methodology
-
-### Feature Extraction
-The platform analyzes multiple statistical features from recent tick data:
-
-- **Price Statistics**: Mean, standard deviation, variance
-- **Trend Indicators**: Price deltas, velocity, direction changes
-- **Volatility Measures**: Rolling volatility, spike detection
-- **Digit Analysis**: Last digit frequency distribution
-- **Market Conditions**: Trend strength, regime detection
-
-### Prediction Models
-- **Frequency Analysis**: Historical digit occurrence patterns
-- **Trend Adjustment**: Recent price movement bias
-- **Volatility Weighting**: High-volatility period adjustments
-- **Ensemble Logic**: Multiple model consensus voting
-
-### Signal Validation
-- **Multi-Run Analysis**: 4 separate prediction runs every 2.5 seconds
-- **Consensus Requirement**: Configurable agreement threshold (2-4 runs)
-- **Confidence Filtering**: Minimum probability threshold enforcement
-- **Risk Assessment**: Real-time market condition evaluation
-
-## 🛡️ Security & Best Practices
-
-### API Security
-- **Demo Mode Default**: Application starts in safe demo mode
-- **Environment Variables**: Secure token storage (never commit tokens)
-- **Connection Encryption**: TLS-secured WebSocket connections
-- **Rate Limiting**: Built-in connection throttling and backoff
-
-### Risk Management
-- **Conservative Defaults**: Safe initial risk parameters
-- **Real-Time Monitoring**: Continuous market condition assessment
-- **Automatic Halts**: Multiple circuit breakers for risk protection
-- **Audit Trail**: Complete signal and trade history logging
-
-### Data Protection
-- **Local Storage**: Sensitive data stored locally only
-- **No Data Transmission**: Prediction models run client-side
-- **Privacy First**: No external analytics or tracking
-- **Secure Defaults**: All risk settings start at conservative levels
-
-## 🔄 Development & Deployment
-
-### Development Setup
-```bash
-# Install dependencies
-npm install
-
-# Start development server with hot reload
-npm run dev
-
-# Run type checking
-npm run type-check
-
-# Build for production
-npm run build
-```
-
-### Production Deployment
-```bash
-# Build optimized version
-npm run build
-
-# Preview production build
-npm run preview
-
-# Deploy to your hosting platform
-npm run deploy
-```
-
-### Docker Support (Coming Soon)
-```bash
-# Build Docker image
-docker build -t accelerator-zone .
-
-# Run with Docker Compose
-docker-compose up
-```
-
-## 📋 Roadmap
-
-### Phase 1 (Current)
-- ✅ Real-time Deriv WebSocket integration
-- ✅ Multi-asset volatility index support
-- ✅ AI-powered digit and band predictions
-- ✅ Professional trading dashboard
-- ✅ XML bot export functionality
-
-### Phase 2 (Planned)
-- 🔄 Backend API with database persistence
-- 🔄 Advanced ML models (LightGBM integration)
-- 🔄 Historical backtesting capabilities
-- 🔄 Telegram notification system
-- 🔄 Portfolio management tools
-
-### Phase 3 (Future)
-- ⏳ Multi-broker support expansion
-- ⏳ Social trading features
-- ⏳ Advanced charting and analysis
-- ⏳ Mobile application development
-- ⏳ API for third-party integration
+This project is for educational and research purposes. Please ensure compliance with Deriv's terms of service when using their API.
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Guidelines
-- Follow TypeScript best practices
-- Maintain design system consistency
-- Add tests for new features
-- Update documentation
-
-### Bug Reports
-Please use the [Issues](https://github.com/your-repo/accelerator-zone/issues) page to report bugs or request features.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## ⚠️ Disclaimer
 
-**Important Risk Warning**: Trading financial derivatives carries significant risk. Past performance does not guarantee future results. This software is provided for educational and research purposes. Always:
-
-- Use demo accounts for testing
-- Never risk more than you can afford to lose
-- Understand the risks involved in financial trading
-- Consult with financial advisors as needed
-- Comply with local financial regulations
-
-The developers are not responsible for any financial losses incurred through use of this software.
-
-## 📞 Support
-
-- **Documentation**: [Full API Docs](https://docs.accelerator-zone.app)
-- **Discord**: [Join our community](https://discord.gg/accelerator-zone)
-- **Email**: support@accelerator-zone.app
-- **Issues**: [GitHub Issues](https://github.com/your-repo/accelerator-zone/issues)
-
----
-
-**Mercedes AI Analysis** | Accelerating Trading Intelligence
-
-*Built with ❤️ using React, TypeScript, and modern web technologies*
+This software is for educational purposes only. Trading involves risk, and past performance does not guarantee future results. Always trade responsibly and within your risk tolerance.

@@ -110,5 +110,7 @@ export interface DerivMessage {
   };
   authorize?: {
     loginid: string;
+    balance?: number;
+    currency?: string;
   };
 }

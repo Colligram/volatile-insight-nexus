@@ -14,27 +14,31 @@ import { VolatilityIndex, RiskSettings, TradingSignal } from '@/types/deriv';
 import { Activity, Zap, Shield, Download } from 'lucide-react';
 
 export function TradingDashboard() {
-  const [selectedSymbol, setSelectedSymbol] = useState<VolatilityIndex>('R_50');
+  const [selectedSymbol, setSelectedSymbol] = useState<VolatilityIndex>(
+    (import.meta.env.VITE_DEFAULT_SYMBOL as VolatilityIndex) || 'R_50'
+  );
   const [timeframe, setTimeframe] = useState<'1min' | '5min'>('1min');
   const [isActive, setIsActive] = useState(false);
+  const [useRealToken, setUseRealToken] = useState(false);
   const [riskSettings, setRiskSettings] = useState<RiskSettings>({
-    maxConsecutiveLosses: 3,
-    dailyLossLimit: 100,
-    maxDrawdownPercent: 20,
-    probabilityThreshold: 0.75,
-    requiredRuns: 3,
-    stake: 1,
+    maxConsecutiveLosses: Number(import.meta.env.VITE_DEFAULT_MAX_CONSECUTIVE_LOSSES) || 3,
+    dailyLossLimit: Number(import.meta.env.VITE_DEFAULT_DAILY_LOSS_LIMIT) || 100,
+    maxDrawdownPercent: Number(import.meta.env.VITE_DEFAULT_MAX_DRAWDOWN_PERCENT) || 20,
+    probabilityThreshold: Number(import.meta.env.VITE_DEFAULT_PROBABILITY_THRESHOLD) || 0.75,
+    requiredRuns: Number(import.meta.env.VITE_DEFAULT_REQUIRED_RUNS) || 3,
+    stake: Number(import.meta.env.VITE_DEFAULT_STAKE) || 1,
     martingaleMultiplier: 2.0,
   });
 
   const {
     ticks,
     isConnected,
+    isAuthorized,
     marketStatus,
     subscribe,
     unsubscribe,
     reconnect,
-  } = useDerivWebSocket();
+  } = useDerivWebSocket(useRealToken);
 
   const {
     digitPredictions,
@@ -93,25 +97,35 @@ export function TradingDashboard() {
                   <Zap className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">Accelerator Zone</h1>
+                  <h1 className="text-2xl font-bold text-foreground">
+                    {import.meta.env.VITE_APP_NAME || 'Accelerator Zone'}
+                  </h1>
                   <p className="text-sm text-foreground-muted">Mercedes AI Analysis</p>
                 </div>
               </div>
               <Badge 
-                variant={isConnected ? "default" : "destructive"} 
-                className={isConnected ? "bg-success text-success-foreground" : ""}
+                variant={isAuthorized ? "default" : isConnected ? "secondary" : "destructive"} 
+                className={isAuthorized ? "bg-success text-success-foreground" : ""}
               >
                 <Activity className="w-3 h-3 mr-1" />
-                {isConnected ? 'Connected' : 'Disconnected'}
+                {isAuthorized ? 'Authorized' : isConnected ? 'Connected' : 'Disconnected'}
               </Badge>
             </div>
             
             <div className="flex items-center gap-4">
               <MarketStatus status={marketStatus} />
               <Button
+                variant={isAuthorized ? "default" : "secondary"}
+                onClick={() => setUseRealToken(!useRealToken)}
+                className={isAuthorized ? "bg-success text-success-foreground" : ""}
+              >
+                {useRealToken ? 'Real Account' : 'Demo Account'}
+              </Button>
+              <Button
                 variant={isActive ? "destructive" : "default"}
                 onClick={handleStartStop}
                 className={isActive ? "" : "bg-gradient-primary hover:bg-gradient-primary/90"}
+                disabled={!isAuthorized}
               >
                 <Shield className="w-4 h-4 mr-2" />
                 {isActive ? 'Stop Analysis' : 'Start Analysis'}

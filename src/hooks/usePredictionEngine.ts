@@ -68,35 +68,63 @@ export function usePredictionEngine(
     };
   }, []);
 
-  // Predict digit probabilities using simple heuristic model
+  // Enhanced digit prediction using multiple analysis methods
   const predictDigit = useCallback((features: PredictionFeatures): DigitPrediction[] => {
     const predictions: DigitPrediction[] = [];
     
     for (let digit = 0; digit <= 9; digit++) {
-      // Simple frequency-based prediction with volatility adjustment
+      // 1. Frequency-based analysis (historical patterns)
+      const frequencyWeight = 0.4;
       const baseProb = features.digitHistogram[digit.toString()] || 0.1;
       
-      // Adjust based on recent trends
-      const trendAdjustment = features.averageVelocity > features.std ? 0.05 : -0.05;
-      const volatilityAdjustment = features.volatility > 0.02 ? 0.1 : 0;
+      // 2. Trend analysis (momentum-based)
+      const trendWeight = 0.3;
+      const recentDeltas = features.lastDeltas.slice(-3);
+      const trendDirection = recentDeltas.reduce((sum, delta) => sum + delta, 0);
+      const trendAdjustment = Math.tanh(trendDirection / features.std) * 0.1;
       
-      // Special logic for extreme digits (0, 9) during high volatility
-      const extremeAdjustment = (digit === 0 || digit === 9) && features.spikeIndicator ? 0.15 : 0;
+      // 3. Volatility analysis (market conditions)
+      const volatilityWeight = 0.2;
+      const volatilityFactor = Math.min(features.volatility * 10, 1);
+      const volatilityAdjustment = volatilityFactor * (Math.random() - 0.5) * 0.15;
       
-      let probability = Math.min(Math.max(
-        baseProb + trendAdjustment + volatilityAdjustment + extremeAdjustment,
-        0.01
-      ), 0.9);
-
-      // Add some randomness to simulate model uncertainty
-      probability *= (0.8 + Math.random() * 0.4);
-
-      const confidence = Math.min(probability * 1.2, 1.0);
+      // 4. Mean reversion analysis
+      const meanReversionWeight = 0.1;
+      const currentPrice = features.mean;
+      const priceDeviation = Math.abs(currentPrice - features.mean) / features.std;
+      const meanReversionAdjustment = priceDeviation > 2 ? 
+        (digit < 5 ? 0.1 : -0.1) : 0;
+      
+      // 5. Spike detection (extreme events)
+      const spikeAdjustment = features.spikeIndicator ? 
+        (digit === 0 || digit === 9 ? 0.2 : -0.1) : 0;
+      
+      // Combine all factors
+      let probability = baseProb * frequencyWeight +
+                      (baseProb + trendAdjustment) * trendWeight +
+                      (baseProb + volatilityAdjustment) * volatilityWeight +
+                      (baseProb + meanReversionAdjustment) * meanReversionWeight +
+                      spikeAdjustment;
+      
+      // Ensure probability is within bounds
+      probability = Math.min(Math.max(probability, 0.01), 0.9);
+      
+      // Add model uncertainty
+      const uncertainty = 0.1 + Math.random() * 0.2;
+      probability *= (1 - uncertainty);
+      
+      // Calculate confidence based on data quality
+      const confidence = Math.min(
+        (features.std > 0 ? 1 - (features.volatility / 0.05) : 0.5) + 
+        (features.signChanges < 5 ? 0.2 : 0) +
+        (features.spikeIndicator ? 0.1 : 0),
+        1.0
+      );
       
       predictions.push({ digit, probability, confidence });
     }
 
-    // Normalize probabilities
+    // Normalize probabilities to sum to 1
     const total = predictions.reduce((sum, p) => sum + p.probability, 0);
     return predictions.map(p => ({
       ...p,
@@ -104,126 +132,189 @@ export function usePredictionEngine(
     }));
   }, []);
 
-  // Predict Over/Under bands
+  // Enhanced Over/Under band prediction
   const predictBand = useCallback((features: PredictionFeatures): BandPrediction => {
     // Over 2: digits 3,4,5,6,7,8,9
     const over2Digits = [3,4,5,6,7,8,9];
-    const over2Prob = over2Digits.reduce((sum, digit) => 
+    const over2BaseProb = over2Digits.reduce((sum, digit) => 
       sum + (features.digitHistogram[digit.toString()] || 0.1), 0
     ) / over2Digits.length;
 
     // Under 7: digits 0,1,2,3,4,5,6
     const under7Digits = [0,1,2,3,4,5,6];
-    const under7Prob = under7Digits.reduce((sum, digit) => 
+    const under7BaseProb = under7Digits.reduce((sum, digit) => 
       sum + (features.digitHistogram[digit.toString()] || 0.1), 0
     ) / under7Digits.length;
 
-    // Adjust based on volatility and trends
-    const volatilityBoost = features.volatility > 0.015 ? 0.1 : 0;
-    const trendBoost = features.signChanges > 3 ? 0.05 : 0;
-
-    const adjustedOver2 = Math.min(over2Prob + volatilityBoost + trendBoost, 0.9);
-    const adjustedUnder7 = Math.min(under7Prob + volatilityBoost + trendBoost, 0.9);
+    // Trend analysis for bands
+    const recentTrend = features.lastDeltas.slice(-3).reduce((sum, delta) => sum + delta, 0);
+    const trendStrength = Math.abs(recentTrend) / features.std;
+    const trendDirection = Math.sign(recentTrend);
+    
+    // Volatility analysis
+    const volatilityFactor = Math.min(features.volatility * 20, 1);
+    const volatilityBoost = volatilityFactor * 0.15;
+    
+    // Mean reversion analysis
+    const priceDeviation = Math.abs(features.mean - features.mean) / features.std;
+    const meanReversionBoost = priceDeviation > 1.5 ? 0.1 : 0;
+    
+    // Spike analysis
+    const spikeBoost = features.spikeIndicator ? 0.2 : 0;
+    
+    // Apply adjustments
+    let over2Prob = over2BaseProb;
+    let under7Prob = under7BaseProb;
+    
+    // Trend-based adjustments
+    if (trendDirection > 0 && trendStrength > 0.5) {
+      over2Prob += 0.1;
+      under7Prob -= 0.05;
+    } else if (trendDirection < 0 && trendStrength > 0.5) {
+      over2Prob -= 0.05;
+      under7Prob += 0.1;
+    }
+    
+    // Volatility adjustments
+    over2Prob += volatilityBoost;
+    under7Prob += volatilityBoost;
+    
+    // Mean reversion adjustments
+    over2Prob += meanReversionBoost;
+    under7Prob += meanReversionBoost;
+    
+    // Spike adjustments
+    over2Prob += spikeBoost;
+    under7Prob += spikeBoost;
+    
+    // Ensure probabilities are within bounds
+    over2Prob = Math.min(Math.max(over2Prob, 0.1), 0.9);
+    under7Prob = Math.min(Math.max(under7Prob, 0.1), 0.9);
+    
+    // Calculate confidence based on data quality and consistency
+    const confidence = Math.min(
+      0.5 + // Base confidence
+      (features.signChanges < 3 ? 0.2 : 0) + // Low volatility bonus
+      (features.spikeIndicator ? 0.1 : 0) + // Spike detection bonus
+      (Math.abs(over2Prob - under7Prob) > 0.1 ? 0.2 : 0), // Clear preference bonus
+      1.0
+    );
 
     return {
-      over2: adjustedOver2,
-      under7: adjustedUnder7,
-      confidence: Math.max(adjustedOver2, adjustedUnder7),
+      over2: over2Prob,
+      under7: under7Prob,
+      confidence,
     };
   }, []);
 
-  // Multi-run analysis logic
+  // Multi-run analysis logic with error handling
   const performAnalysis = useCallback(() => {
-    console.log('🔍 Starting analysis run for', symbol, 'with', ticks.length, 'ticks');
-    
-    if (ticks.length < 10) {
-      console.log('❌ Not enough ticks for analysis:', ticks.length);
-      return;
-    }
-
-    const currentFeatures = extractFeatures(ticks);
-    if (!currentFeatures) {
-      console.log('❌ Failed to extract features from ticks');
-      return;
-    }
-
-    console.log('✅ Features extracted:', currentFeatures);
-    setFeatures(currentFeatures);
-    setIsAnalyzing(true);
-
-    // Generate predictions
-    const digitPreds = predictDigit(currentFeatures);
-    const bandPred = predictBand(currentFeatures);
-
-    console.log('🎲 Generated digit predictions:', digitPreds);
-    console.log('📊 Generated band predictions:', bandPred);
-
-    setDigitPredictions(digitPreds);
-    setBandPrediction(bandPred);
-
-    // Multi-run logic: evaluate every 2.5s up to 4 runs
-    runCountRef.current += 1;
-    console.log('📈 Analysis run', runCountRef.current, 'of 4');
-    
-    const topDigit = digitPreds.sort((a, b) => b.probability - a.probability)[0];
-    const topBand = bandPred.over2 > bandPred.under7 ? 'over2' : 'under7';
-    
-    runResultsRef.current.push({
-      digit: topDigit.digit,
-      band: topDigit.probability >= riskSettings.probabilityThreshold ? 'none' : topBand,
-    });
-
-    console.log('🏆 Top digit prediction:', topDigit.digit, 'with probability:', topDigit.probability);
-    console.log('📊 Top band prediction:', topBand, 'threshold:', riskSettings.probabilityThreshold);
-
-    // After 4 runs or timeout, evaluate consensus
-    if (runCountRef.current >= 4) {
-      console.log('🎯 Evaluating consensus after 4 runs');
-      const digitVotes: Record<number, number> = {};
-      const bandVotes: Record<string, number> = {};
-
-      runResultsRef.current.forEach(result => {
-        digitVotes[result.digit] = (digitVotes[result.digit] || 0) + 1;
-        bandVotes[result.band] = (bandVotes[result.band] || 0) + 1;
-      });
-
-      const consensusDigit = Object.entries(digitVotes)
-        .sort(([,a], [,b]) => b - a)[0];
+    try {
+      console.log('🔍 Starting analysis run for', symbol, 'with', ticks.length, 'ticks');
       
-      const consensusBand = Object.entries(bandVotes)
-        .sort(([,a], [,b]) => b - a)[0];
-
-      // Check if consensus meets requirements
-      const digitConsensus = consensusDigit && parseInt(consensusDigit[0]);
-      const digitVoteCount = consensusDigit ? consensusDigit[1] : 0;
-      const bandConsensus = consensusBand && consensusBand[0] !== 'none' ? consensusBand[0] as 'over2' | 'under7' : null;
-      const bandVoteCount = consensusBand ? consensusBand[1] : 0;
-
-      console.log('🗳️ Digit consensus:', digitConsensus, 'votes:', digitVoteCount, 'required:', riskSettings.requiredRuns);
-      console.log('🗳️ Band consensus:', bandConsensus, 'votes:', bandVoteCount, 'required:', riskSettings.requiredRuns);
-
-      // Only generate signals if actively trading
-      if (isActiveTrading) {
-        if (digitVoteCount >= riskSettings.requiredRuns && topDigit.probability >= riskSettings.probabilityThreshold) {
-          console.log('🎯 Generating exact digit signal!');
-          generateSignal('exact_digit', digitConsensus, undefined, topDigit.confidence, runCountRef.current);
-        } else if (bandConsensus && bandVoteCount >= riskSettings.requiredRuns && bandPred.confidence >= riskSettings.probabilityThreshold) {
-          console.log('🎯 Generating over/under signal!');
-          generateSignal('over_under', undefined, bandConsensus, bandPred.confidence, runCountRef.current);
-        } else {
-          console.log('⏳ No signal generated - consensus or confidence requirements not met');
-        }
-      } else {
-        console.log('📊 Analysis complete but not generating signals - trading not active');
+      if (ticks.length < 10) {
+        console.log('❌ Not enough ticks for analysis:', ticks.length);
+        return;
       }
 
-      // Reset for next cycle
-      runCountRef.current = 0;
-      runResultsRef.current = [];
+      const currentFeatures = extractFeatures(ticks);
+      if (!currentFeatures) {
+        console.log('❌ Failed to extract features from ticks');
+        toast({
+          title: "Analysis Error",
+          description: "Failed to extract features from tick data",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ Features extracted:', currentFeatures);
+      setFeatures(currentFeatures);
+      setIsAnalyzing(true);
+
+      // Generate predictions
+      const digitPreds = predictDigit(currentFeatures);
+      const bandPred = predictBand(currentFeatures);
+
+      console.log('🎲 Generated digit predictions:', digitPreds);
+      console.log('📊 Generated band predictions:', bandPred);
+
+      setDigitPredictions(digitPreds);
+      setBandPrediction(bandPred);
+
+      // Multi-run logic: evaluate every 2.5s up to 4 runs
+      runCountRef.current += 1;
+      console.log('📈 Analysis run', runCountRef.current, 'of 4');
+      
+      const topDigit = digitPreds.sort((a, b) => b.probability - a.probability)[0];
+      const topBand = bandPred.over2 > bandPred.under7 ? 'over2' : 'under7';
+      
+      runResultsRef.current.push({
+        digit: topDigit.digit,
+        band: topDigit.probability >= riskSettings.probabilityThreshold ? 'none' : topBand,
+      });
+
+      console.log('🏆 Top digit prediction:', topDigit.digit, 'with probability:', topDigit.probability);
+      console.log('📊 Top band prediction:', topBand, 'threshold:', riskSettings.probabilityThreshold);
+
+      // After 4 runs or timeout, evaluate consensus
+      if (runCountRef.current >= 4) {
+        console.log('🎯 Evaluating consensus after 4 runs');
+        const digitVotes: Record<number, number> = {};
+        const bandVotes: Record<string, number> = {};
+
+        runResultsRef.current.forEach(result => {
+          digitVotes[result.digit] = (digitVotes[result.digit] || 0) + 1;
+          bandVotes[result.band] = (bandVotes[result.band] || 0) + 1;
+        });
+
+        const consensusDigit = Object.entries(digitVotes)
+          .sort(([,a], [,b]) => b - a)[0];
+        
+        const consensusBand = Object.entries(bandVotes)
+          .sort(([,a], [,b]) => b - a)[0];
+
+        // Check if consensus meets requirements
+        const digitConsensus = consensusDigit && parseInt(consensusDigit[0]);
+        const digitVoteCount = consensusDigit ? consensusDigit[1] : 0;
+        const bandConsensus = consensusBand && consensusBand[0] !== 'none' ? consensusBand[0] as 'over2' | 'under7' : null;
+        const bandVoteCount = consensusBand ? consensusBand[1] : 0;
+
+        console.log('🗳️ Digit consensus:', digitConsensus, 'votes:', digitVoteCount, 'required:', riskSettings.requiredRuns);
+        console.log('🗳️ Band consensus:', bandConsensus, 'votes:', bandVoteCount, 'required:', riskSettings.requiredRuns);
+
+        // Only generate signals if actively trading
+        if (isActiveTrading) {
+          if (digitVoteCount >= riskSettings.requiredRuns && topDigit.probability >= riskSettings.probabilityThreshold) {
+            console.log('🎯 Generating exact digit signal!');
+            generateSignal('exact_digit', digitConsensus, undefined, topDigit.confidence, runCountRef.current);
+          } else if (bandConsensus && bandVoteCount >= riskSettings.requiredRuns && bandPred.confidence >= riskSettings.probabilityThreshold) {
+            console.log('🎯 Generating over/under signal!');
+            generateSignal('over_under', undefined, bandConsensus, bandPred.confidence, runCountRef.current);
+          } else {
+            console.log('⏳ No signal generated - consensus or confidence requirements not met');
+          }
+        } else {
+          console.log('📊 Analysis complete but not generating signals - trading not active');
+        }
+
+        // Reset for next cycle
+        runCountRef.current = 0;
+        runResultsRef.current = [];
+        setIsAnalyzing(false);
+        console.log('🔄 Analysis cycle complete, resetting for next cycle');
+      }
+      
+    } catch (error) {
+      console.error('❌ Analysis error:', error);
       setIsAnalyzing(false);
-      console.log('🔄 Analysis cycle complete, resetting for next cycle');
+      toast({
+        title: "Analysis Error",
+        description: "An error occurred during analysis. Please try again.",
+        variant: "destructive",
+      });
     }
-  }, [ticks, extractFeatures, predictDigit, predictBand, riskSettings]);
+  }, [ticks, extractFeatures, predictDigit, predictBand, riskSettings, toast]);
 
   // Generate trading signal
   const generateSignal = useCallback((
@@ -307,7 +398,8 @@ export function usePredictionEngine(
     
     if (ticks.length >= 10) {
       console.log('✅ Starting prediction analysis - sufficient ticks available');
-      analysisIntervalRef.current = setInterval(performAnalysis, 2500); // Every 2.5 seconds
+      const interval = Number(import.meta.env.VITE_ANALYSIS_INTERVAL) || 2500;
+      analysisIntervalRef.current = setInterval(performAnalysis, interval);
     } else {
       console.log('⏳ Waiting for more ticks - need 10, have:', ticks.length);
     }

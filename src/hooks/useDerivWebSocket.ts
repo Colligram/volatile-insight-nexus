@@ -3,13 +3,16 @@ import { DerivTick, DerivMessage, VolatilityIndex, MarketStatus } from '@/types/
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
 
-// Mock Deriv WebSocket for demo - replace with actual WebSocket in production
-const DEMO_MODE = true;
-const DERIV_WS_URL = 'wss://ws.binaryws.com/websockets/v3?app_id=1089';
+// Deriv WebSocket configuration
+const DEMO_MODE = false; // Set to false for real API
+const DERIV_WS_URL = import.meta.env.VITE_DERIV_WS_URL || 'wss://ws.binaryws.com/websockets/v3?app_id=1089';
+const DEMO_TOKEN = import.meta.env.VITE_DERIV_DEMO_TOKEN || 'ty6Pm5q4DyxTRMU';
+const REAL_TOKEN = import.meta.env.VITE_DERIV_REAL_TOKEN || 'ZMeYdNOS4mn7hun';
 
-export function useDerivWebSocket() {
+export function useDerivWebSocket(useRealToken: boolean = false) {
   const [ticks, setTicks] = useState<Record<string, DerivTick[]>>({});
   const [isConnected, setIsConnected] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [marketStatus, setMarketStatus] = useState<MarketStatus>({
     status: 'normal',
     zScore: 0,
@@ -106,11 +109,13 @@ export function useDerivWebSocket() {
           description: "Successfully connected to Deriv WebSocket",
         });
 
-        // Authorize with demo token (would use env variable in production)
+        // Authorize with selected token
         if (wsRef.current) {
+          const token = useRealToken ? REAL_TOKEN : DEMO_TOKEN;
           wsRef.current.send(JSON.stringify({
-            authorize: 'YOUR_DEMO_TOKEN_HERE'
+            authorize: token
           }));
+          console.log('🔐 Authorizing with', useRealToken ? 'REAL' : 'DEMO', 'token');
         }
       };
 
@@ -118,9 +123,21 @@ export function useDerivWebSocket() {
         try {
           const data: DerivMessage = JSON.parse(event.data);
           
+          // Handle authorization response
+          if (data.authorize) {
+            setIsAuthorized(true);
+            console.log('✅ Authorized successfully:', data.authorize.loginid);
+            toast({
+              title: "Authorized",
+              description: `Connected as ${data.authorize.loginid}`,
+            });
+            return;
+          }
+          
+          // Handle tick data
           if (data.tick) {
             const tick: DerivTick = {
-              id: data.tick.id,
+              id: data.tick.id || uuidv4(),
               symbol: data.tick.symbol as VolatilityIndex,
               timestamp: data.tick.epoch * 1000,
               price: data.tick.quote,
@@ -130,32 +147,57 @@ export function useDerivWebSocket() {
             addTick(tick);
           }
 
+          // Handle errors
           if (data.error) {
+            console.error('Deriv API Error:', data.error);
             toast({
               title: "API Error",
-              description: data.error.message,
+              description: data.error.message || 'Unknown error occurred',
               variant: "destructive",
             });
           }
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
+          toast({
+            title: "Parse Error",
+            description: "Failed to parse WebSocket message",
+            variant: "destructive",
+          });
         }
       };
 
-      wsRef.current.onclose = () => {
+      wsRef.current.onclose = (event) => {
         setIsConnected(false);
-        setMarketStatus(prev => ({ ...prev, status: 'disconnected', message: 'Connection lost' }));
+        setIsAuthorized(false);
+        setMarketStatus(prev => ({ 
+          ...prev, 
+          status: 'disconnected', 
+          message: `Connection lost (Code: ${event.code})` 
+        }));
         
-        // Auto-reconnect with exponential backoff
-        const delay = Math.min(1000 * Math.pow(2, Math.random()), 30000);
-        reconnectTimeoutRef.current = setTimeout(connectWebSocket, delay);
+        console.log('🔌 WebSocket closed:', event.code, event.reason);
+        
+        // Auto-reconnect with exponential backoff (only if not manually closed)
+        if (event.code !== 1000) {
+          const delay = Math.min(1000 * Math.pow(2, Math.random()), 30000);
+          console.log('🔄 Reconnecting in', delay, 'ms');
+          reconnectTimeoutRef.current = setTimeout(connectWebSocket, delay);
+        }
       };
 
       wsRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
+        setIsConnected(false);
+        setIsAuthorized(false);
+        setMarketStatus(prev => ({ 
+          ...prev, 
+          status: 'disconnected', 
+          message: 'Connection error occurred' 
+        }));
+        
         toast({
           title: "Connection Error",
-          description: "Failed to connect to Deriv API",
+          description: "Failed to connect to Deriv API. Retrying...",
           variant: "destructive",
         });
       };
@@ -190,6 +232,7 @@ export function useDerivWebSocket() {
         ticks: symbol,
         subscribe: 1
       }));
+      console.log('📡 Subscribed to', symbol);
     }
   }, [generateDemoTick, addTick]);
 
@@ -208,6 +251,7 @@ export function useDerivWebSocket() {
       wsRef.current.send(JSON.stringify({
         forget_all: 'ticks'
       }));
+      console.log('📡 Unsubscribed from', symbol);
     }
   }, []);
 
@@ -240,6 +284,7 @@ export function useDerivWebSocket() {
   return {
     ticks,
     isConnected,
+    isAuthorized,
     marketStatus,
     subscribe,
     unsubscribe,
