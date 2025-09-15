@@ -44,7 +44,7 @@ export function LiveFeed({ symbol, ticks, isConnected, isAnalyzing, features }: 
     prices.forEach((price, index) => {
       const x = (index / (prices.length - 1)) * width;
       const y = height - ((price - minPrice) / priceRange) * height;
-      
+
       if (index === 0) {
         ctx.moveTo(x, y);
       } else {
@@ -137,7 +137,7 @@ export function LiveFeed({ symbol, ticks, isConnected, isAnalyzing, features }: 
         <div className="space-y-1 max-h-32 overflow-y-auto">
           {latestTicks.slice().reverse().map((tick, index) => (
             <div
-              key={tick.id}
+              key={`${tick.id}-${tick.timestamp}-${index}`}
               className="flex items-center justify-between p-2 rounded bg-background-elevated text-sm"
             >
               <div className="flex items-center gap-2">
