@@ -9,9 +9,13 @@ import { PredictionPanel } from "./PredictionPanel";
 import { RiskControls } from "./RiskControls";
 import { SignalHistory } from "./SignalHistory";
 import { MarketStatus } from "./MarketStatus";
+import { TenSecondPredictionPanel } from "./TenSecondPredictionPanel";
+import { VolatilityAnalysisPanel } from "./VolatilityAnalysisPanel";
+import { RealtimeAnalysisPanel } from "./RealtimeAnalysisPanel";
+import { OverUnderAnalysisPanel } from "./OverUnderAnalysisPanel";
 
 import { useDerivWebSocket } from "@/hooks/useDerivWebSocket";
-import { usePredictionEngine } from "@/hooks/usePredictionEngine";
+import { useAdvancedPredictionEngine } from "@/hooks/useAdvancedPredictionEngine";
 
 import {
   VolatilityIndex,
@@ -66,7 +70,11 @@ export function TradingDashboard() {
     isAnalyzing,
     generateSignal,
     exportXML,
-  } = usePredictionEngine(
+    tenSecondPrediction,
+    volatilityAnalysis,
+    realtimeAnalysis,
+    allVolatilityData,
+  } = useAdvancedPredictionEngine(
     selectedSymbol,
     ticks[selectedSymbol] || [],
     riskSettings,
@@ -104,10 +112,10 @@ export function TradingDashboard() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">
-                    {import.meta.env.VITE_APP_NAME || "Accelerator Zone"}
+                    {import.meta.env.VITE_APP_NAME || "Deriv Prediction Platform"}
                   </h1>
                   <p className="text-sm text-foreground-muted">
-                    Mercedes AI Analysis
+                    Advanced 10-Second Digit Prediction & Volatility Analysis
                   </p>
                 </div>
               </div>
@@ -174,64 +182,102 @@ export function TradingDashboard() {
 
       {/* Main Dashboard */}
       <main className="container mx-auto px-6 py-6">
-        <div className="grid grid-cols-12 gap-6 h-[calc(100vh-140px)]">
-          {/* Left Panel */}
-          <div className="col-span-12 lg:col-span-3 space-y-6">
-            <Card className="p-6 bg-glass-surface border-glass-border backdrop-blur-xl shadow-glass">
-              <h3 className="text-lg font-semibold mb-4 text-foreground">
-                Asset Selection
-              </h3>
-              <AssetSelector
-                selectedSymbol={selectedSymbol}
-                onSymbolChange={setSelectedSymbol}
-                timeframe={timeframe}
-                onTimeframeChange={setTimeframe}
-              />
-            </Card>
+        <div className="space-y-6">
+          {/* Top Row - Asset Selection and Controls */}
+          <div className="grid grid-cols-12 gap-6">
+            <div className="col-span-12 lg:col-span-3">
+              <Card className="p-6 bg-glass-surface border-glass-border backdrop-blur-xl shadow-glass">
+                <h3 className="text-lg font-semibold mb-4 text-foreground">
+                  Asset Selection
+                </h3>
+                <AssetSelector
+                  selectedSymbol={selectedSymbol}
+                  onSymbolChange={setSelectedSymbol}
+                  timeframe={timeframe}
+                  onTimeframeChange={setTimeframe}
+                />
+              </Card>
+            </div>
 
-            <Card className="p-6 bg-glass-surface border-glass-border backdrop-blur-xl shadow-glass">
-              <h3 className="text-lg font-semibold mb-4 text-foreground">
-                Risk Controls
-              </h3>
-              <RiskControls
-                settings={riskSettings}
-                onChange={setRiskSettings}
-                isActive={isActive}
-              />
-            </Card>
+            <div className="col-span-12 lg:col-span-3">
+              <Card className="p-6 bg-glass-surface border-glass-border backdrop-blur-xl shadow-glass">
+                <h3 className="text-lg font-semibold mb-4 text-foreground">
+                  Risk Controls
+                </h3>
+                <RiskControls
+                  settings={riskSettings}
+                  onChange={setRiskSettings}
+                  isActive={isActive}
+                />
+              </Card>
+            </div>
 
-            <Card className="p-6 bg-glass-surface border-glass-border backdrop-blur-xl shadow-glass">
-              <h3 className="text-lg font-semibold mb-4 text-foreground">
-                Signal History
-              </h3>
-              <SignalHistory signals={signals.slice(0, 5)} />
-            </Card>
+            <div className="col-span-12 lg:col-span-3">
+              <Card className="p-6 bg-glass-surface border-glass-border backdrop-blur-xl shadow-glass">
+                <h3 className="text-lg font-semibold mb-4 text-foreground">
+                  Signal History
+                </h3>
+                <SignalHistory signals={signals.slice(0, 5)} />
+              </Card>
+            </div>
+
+            <div className="col-span-12 lg:col-span-3">
+              <Card className="p-6 bg-glass-surface border-glass-border backdrop-blur-xl shadow-glass">
+                <PredictionPanel
+                  digitPredictions={digitPredictions}
+                  bandPrediction={bandPrediction}
+                  isActive={isAnalyzing}
+                  threshold={riskSettings.probabilityThreshold}
+                  onGenerateSignal={generateSignal}
+                />
+              </Card>
+            </div>
           </div>
 
-          {/* Center Panel */}
-          <div className="col-span-12 lg:col-span-6">
-            <Card className="h-full p-6 bg-glass-surface border-glass-border backdrop-blur-xl shadow-glass">
-              <LiveFeed
-                symbol={selectedSymbol}
-                ticks={ticks[selectedSymbol] || []}
-                isConnected={isConnected}
+          {/* Second Row - Advanced Analysis Panels */}
+          <div className="grid grid-cols-12 gap-6">
+            <div className="col-span-12 lg:col-span-4">
+              <TenSecondPredictionPanel 
+                prediction={tenSecondPrediction}
                 isAnalyzing={isAnalyzing}
-                features={features}
               />
-            </Card>
+            </div>
+
+            <div className="col-span-12 lg:col-span-4">
+              <VolatilityAnalysisPanel 
+                analysis={volatilityAnalysis}
+                isAnalyzing={isAnalyzing}
+              />
+            </div>
+
+            <div className="col-span-12 lg:col-span-4">
+              <RealtimeAnalysisPanel 
+                analysis={realtimeAnalysis}
+                isAnalyzing={isAnalyzing}
+              />
+            </div>
           </div>
 
-          {/* Right Panel */}
-          <div className="col-span-12 lg:col-span-3">
-            <Card className="h-full p-6 bg-glass-surface border-glass-border backdrop-blur-xl shadow-glass">
-              <PredictionPanel
-                digitPredictions={digitPredictions}
-                bandPrediction={bandPrediction}
-                isActive={isAnalyzing}
-                threshold={riskSettings.probabilityThreshold}
-                onGenerateSignal={generateSignal}
+          {/* Third Row - Over/Under Analysis and Live Feed */}
+          <div className="grid grid-cols-12 gap-6">
+            <div className="col-span-12 lg:col-span-6">
+              <OverUnderAnalysisPanel 
+                prediction={bandPrediction}
+                isAnalyzing={isAnalyzing}
               />
-            </Card>
+            </div>
+
+            <div className="col-span-12 lg:col-span-6">
+              <Card className="h-full p-6 bg-glass-surface border-glass-border backdrop-blur-xl shadow-glass">
+                <LiveFeed
+                  symbol={selectedSymbol}
+                  ticks={ticks[selectedSymbol] || []}
+                  isConnected={isConnected}
+                  isAnalyzing={isAnalyzing}
+                  features={features}
+                />
+              </Card>
+            </div>
           </div>
         </div>
       </main>

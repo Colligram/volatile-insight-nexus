@@ -43,18 +43,43 @@ export interface PredictionFeatures {
   averageVelocity: number;
   spikeIndicator: boolean;
   volatility: number;
+  // Enhanced features for 10-second prediction
+  priceAcceleration: number;
+  momentum: number;
+  trendStrength: number;
+  volatilityClusters: number[];
+  digitSequences: number[];
+  marketRegime: 'trending' | 'ranging' | 'volatile' | 'calm';
+  // Cross-volatility analysis
+  crossVolatilityCorrelation: Record<string, number>;
+  volatilityRegime: 'low' | 'medium' | 'high' | 'extreme';
 }
 
 export interface DigitPrediction {
   digit: number;
   probability: number;
   confidence: number;
+  // Enhanced prediction features
+  timeHorizon: number; // seconds
+  volatilityImpact: number;
+  trendAlignment: number;
+  sequencePattern: boolean;
+  marketRegimeAlignment: number;
 }
 
 export interface BandPrediction {
   over2: number;
   under7: number;
   confidence: number;
+  // Enhanced band analysis
+  overUnderAnalysis: {
+    over0to8: number; // digits 0-8
+    under9to1: number; // digits 9-1
+    over2to9: number; // digits 2-9
+    under0to7: number; // digits 0-7
+  };
+  volatilityAdjusted: boolean;
+  trendBased: boolean;
 }
 
 export interface TradingSignal {
@@ -113,4 +138,84 @@ export interface DerivMessage {
     balance?: number;
     currency?: string;
   };
+}
+
+// 10-Second Prediction Engine Types
+export interface TenSecondPrediction {
+  id: string;
+  symbol: VolatilityIndex;
+  timestamp: number;
+  predictions: {
+    digit: number;
+    probability: number;
+    confidence: number;
+    volatilityImpact: number;
+    timeToExpiry: number;
+  }[];
+  topPrediction: {
+    digit: number;
+    probability: number;
+    confidence: number;
+  };
+  marketConditions: {
+    volatility: number;
+    trend: 'up' | 'down' | 'sideways';
+    regime: 'trending' | 'ranging' | 'volatile' | 'calm';
+  };
+  analysisTime: number; // milliseconds taken for analysis
+}
+
+// Comprehensive Volatility Analysis
+export interface VolatilityAnalysis {
+  symbol: VolatilityIndex;
+  timestamp: number;
+  currentVolatility: number;
+  volatilityHistory: number[];
+  volatilityRegime: 'low' | 'medium' | 'high' | 'extreme';
+  crossCorrelations: Record<VolatilityIndex, number>;
+  volatilityClusters: {
+    cluster: number;
+    startTime: number;
+    endTime: number;
+    intensity: number;
+  }[];
+  volatilityForecast: {
+    next10Seconds: number;
+    next30Seconds: number;
+    next60Seconds: number;
+  };
+  marketImpact: {
+    digitBias: Record<string, number>;
+    trendStrength: number;
+    reversalProbability: number;
+  };
+}
+
+// Real-time Analysis Engine
+export interface RealtimeAnalysis {
+  symbol: VolatilityIndex;
+  timestamp: number;
+  chartData: {
+    price: number;
+    volume: number;
+    timestamp: number;
+  }[];
+  technicalIndicators: {
+    rsi: number;
+    macd: number;
+    bollingerUpper: number;
+    bollingerLower: number;
+    movingAverage: number;
+  };
+  patternRecognition: {
+    patterns: string[];
+    confidence: number;
+    nextMove: 'up' | 'down' | 'sideways';
+  };
+  automatedSignals: {
+    type: 'buy' | 'sell' | 'hold';
+    strength: number;
+    timeframe: number;
+    reasoning: string;
+  }[];
 }

@@ -6,8 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 // Deriv WebSocket configuration
 const DEMO_MODE = false; // Set to false for real API
 const DERIV_WS_URL = import.meta.env.VITE_DERIV_WS_URL || 'wss://ws.binaryws.com/websockets/v3?app_id=1089';
-const DEMO_TOKEN = import.meta.env.VITE_DERIV_DEMO_TOKEN || 'ty6Pm5q4DyxTRMU';
-const REAL_TOKEN = import.meta.env.VITE_DERIV_REAL_TOKEN || 'ZMeYdNOS4mn7hun';
+const DEMO_TOKEN = import.meta.env.VITE_DERIV_DEMO_TOKEN || 'V2HgXWBEZVkAV9h';
+const REAL_TOKEN = import.meta.env.VITE_DERIV_REAL_TOKEN || 'i11qvL6rCXAElTv';
 
 export function useDerivWebSocket(useRealToken: boolean = false) {
   const [ticks, setTicks] = useState<Record<string, DerivTick[]>>({});
